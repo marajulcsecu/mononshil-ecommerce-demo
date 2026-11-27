@@ -5,6 +5,7 @@ A client-ready multi-category e-commerce storefront built for **Mononshil**, fea
 ## Key Features
 
 - **No Database Required**: Typed static product catalog (`src/data/products.ts`, `src/data/categories.ts`) cleanly separated from UI components for straightforward API/database migration later.
+- **Full Bilingual Experience (`EN | বাংলা`)**: Instant language toggle in the header persisted to `localStorage`, complete Bengali translations for all UI flows, categories, and 15 products, dedicated Bengali webfonts (`Noto Serif Bengali` + `Hind Siliguri`), Bangla numerals & Taka formatting (`৳ ৪,২৯০`), and bilingual catalog search.
 - **Full Storefront Experience**:
   - **Home (`/`)**: Editorial hero, 3 department spotlights, interactive category-tabbed featured collection, service pillars, and pantry spotlight.
   - **Shop & Search (`/shop`)**: URL-synced filtering by department, BDT price range, seasonal offers, search query, and sorting, with mobile filter drawer.

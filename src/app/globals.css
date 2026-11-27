@@ -36,14 +36,23 @@
   --color-sale-soft: var(--color-sale-soft);
   --color-error: var(--color-error);
   --color-error-soft: var(--color-error-soft);
-  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-fraunces), Georgia, Cambria, serif;
+  --font-sans: var(--font-plus-jakarta), var(--font-hind-siliguri), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), var(--font-noto-serif-bn), Georgia, Cambria, serif;
 }
 
 html {
   scroll-behavior: smooth;
   background-color: var(--color-canvas);
   color: var(--color-ink);
+}
+
+html[data-locale="bn"] body {
+  font-family: var(--font-hind-siliguri), var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+html[data-locale="bn"] .font-display {
+  font-family: var(--font-noto-serif-bn), var(--font-fraunces), Georgia, serif;
+  line-height: 1.24;
 }
 
 body {

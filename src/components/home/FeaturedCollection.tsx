@@ -5,19 +5,23 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PRODUCTS } from "@/data/products";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { useLocale } from "@/context/LocaleContext";
+import { UI_TEXT } from "@/lib/i18n";
 import type { CategorySlug } from "@/types/commerce";
 
 type TabKey = "featured" | CategorySlug;
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "featured", label: "Featured" },
-  { key: "footwear", label: "Footwear" },
-  { key: "apparel", label: "Apparel" },
-  { key: "grocery", label: "Grocery" },
-];
-
 export function FeaturedCollection() {
+  const { locale } = useLocale();
+  const t = UI_TEXT[locale].featured;
   const [activeTab, setActiveTab] = useState<TabKey>("featured");
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: "featured", label: t.tabFeatured },
+    { key: "footwear", label: t.tabFootwear },
+    { key: "apparel", label: t.tabApparel },
+    { key: "grocery", label: t.tabGrocery },
+  ];
 
   const visibleProducts = useMemo(() => {
     if (activeTab === "featured") {
@@ -26,16 +30,18 @@ export function FeaturedCollection() {
     return PRODUCTS.filter((product) => product.category === activeTab);
   }, [activeTab]);
 
+  const activeTabLabel = tabs.find((tab) => tab.key === activeTab)?.label ?? "";
+
   return (
     <section className="border-t border-border bg-surface">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-              Curated Selection
+              {t.eyebrow}
             </p>
             <h2 className="font-display mt-2 text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-              Everyday staples built to last.
+              {t.title}
             </h2>
           </div>
 
@@ -44,7 +50,7 @@ export function FeaturedCollection() {
             aria-label="Filter featured products by department"
             className="flex flex-wrap gap-2"
           >
-            {TABS.map((tab) => {
+            {tabs.map((tab) => {
               const isSelected = activeTab === tab.key;
               return (
                 <button
@@ -79,8 +85,10 @@ export function FeaturedCollection() {
           >
             <span>
               {activeTab === "featured"
-                ? "View All 15 Products"
-                : `View All ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`}
+                ? t.viewAllProducts
+                : locale === "bn"
+                ? `সকল ${activeTabLabel} দেখুন`
+                : `${t.viewCategoryPrefix} ${activeTabLabel}`}
             </span>
             <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
           </Link>

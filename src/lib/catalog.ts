@@ -1,4 +1,5 @@
 import { PRODUCTS } from "@/data/products";
+import { CATEGORY_BN, PRODUCT_BN } from "@/data/translations-bn";
 import type { CatalogFilters, CategorySlug, Product } from "@/types/commerce";
 
 export function hasProductOffer(product: Product): boolean {
@@ -22,6 +23,8 @@ export function searchProducts(products: Product[], rawQuery: string): Product[]
   }
 
   return products.filter((product) => {
+    const bnProduct = PRODUCT_BN[product.slug];
+    const bnCategory = CATEGORY_BN[product.category];
     const haystack = [
       product.name,
       product.sku,
@@ -29,6 +32,12 @@ export function searchProducts(products: Product[], rawQuery: string): Product[]
       product.shortDescription,
       product.description,
       ...product.highlights,
+      bnProduct?.name ?? "",
+      bnProduct?.shortDescription ?? "",
+      bnProduct?.description ?? "",
+      ...(bnProduct?.highlights ?? []),
+      bnCategory?.name ?? "",
+      bnCategory?.shortTitle ?? "",
     ]
       .join(" ")
       .toLowerCase();

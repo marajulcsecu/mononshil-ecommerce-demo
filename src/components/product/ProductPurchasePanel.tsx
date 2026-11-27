@@ -6,35 +6,47 @@ import { Check, Minus, Plus, RefreshCw, ShieldCheck, ShoppingBag, Truck } from "
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "@/context/CartContext";
+import { useLocale } from "@/context/LocaleContext";
+import {
+  getLocalizedProduct,
+  translateColorName,
+  translatePackLabel,
+  translateSizeValue,
+} from "@/data/translations-bn";
 import {
   buildCartItemKey,
-  formatBdt,
   formatVariantLabel,
   getSavingsPercent,
 } from "@/lib/commerce";
+import { UI_TEXT, formatNumber, formatPrice } from "@/lib/i18n";
 import type { Product } from "@/types/commerce";
 
 interface ProductPurchasePanelProps {
   product: Product;
 }
 
-export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
+export function ProductPurchasePanel({ product: rawProduct }: ProductPurchasePanelProps) {
   const router = useRouter();
   const { addItem } = useCart();
+  const { locale } = useLocale();
+  const t = UI_TEXT[locale].productDetail;
+  const cardT = UI_TEXT[locale].productCard;
+
+  const product = getLocalizedProduct(rawProduct, locale);
 
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
-    product.sizes?.[Math.min(1, product.sizes.length - 1)]
+    rawProduct.sizes?.[Math.min(1, rawProduct.sizes.length - 1)]
   );
   const [selectedColor, setSelectedColor] = useState<string | undefined>(
-    product.colors?.[0]?.name
+    rawProduct.colors?.[0]?.name
   );
   const [selectedPackIndex, setSelectedPackIndex] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [addedFeedback, setAddedFeedback] = useState<boolean>(false);
 
-  const activePack = product.packs?.[selectedPackIndex];
-  const unitPrice = activePack ? activePack.price : product.price;
-  const compareAtPrice = activePack ? activePack.compareAtPrice : product.compareAtPrice;
+  const activePack = rawProduct.packs?.[selectedPackIndex];
+  const unitPrice = activePack ? activePack.price : rawProduct.price;
+  const compareAtPrice = activePack ? activePack.compareAtPrice : rawProduct.compareAtPrice;
   const savings = getSavingsPercent(unitPrice, compareAtPrice);
 
   const buildCartPayload = () => {
@@ -45,16 +57,16 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     };
 
     return {
-      key: buildCartItemKey(product.id, selectedVariant),
-      productId: product.id,
-      slug: product.slug,
-      name: product.name,
-      category: product.category,
-      image: product.image,
-      imageAlt: product.imageAlt,
+      key: buildCartItemKey(rawProduct.id, selectedVariant),
+      productId: rawProduct.id,
+      slug: rawProduct.slug,
+      name: rawProduct.name,
+      category: rawProduct.category,
+      image: rawProduct.image,
+      imageAlt: rawProduct.imageAlt,
       unitPrice,
       quantity,
-      variantLabel: formatVariantLabel(selectedVariant, product.sizeLabel),
+      variantLabel: formatVariantLabel(selectedVariant, rawProduct.sizeLabel),
       selectedVariant,
     };
   };
@@ -74,30 +86,36 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-baseline gap-3">
         <p className="price-num text-2xl font-semibold text-ink sm:text-3xl">
-          {formatBdt(unitPrice)}
+          {formatPrice(unitPrice, locale)}
         </p>
         {compareAtPrice && compareAtPrice > unitPrice ? (
           <>
             <p className="price-num text-base text-ink-muted line-through">
-              {formatBdt(compareAtPrice)}
+              {formatPrice(compareAtPrice, locale)}
             </p>
-            {savings ? <Badge tone="sale">Save {savings}%</Badge> : null}
+            {savings ? (
+              <Badge tone="sale">
+                {cardT.savePrefix} {formatNumber(savings, locale)}%
+              </Badge>
+            ) : null}
           </>
         ) : null}
       </div>
 
       <p className="text-sm leading-relaxed text-ink-secondary">{product.description}</p>
 
-      {product.colors && product.colors.length > 0 ? (
+      {rawProduct.colors && rawProduct.colors.length > 0 ? (
         <div className="border-t border-border pt-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Color
+              {t.color}
             </span>
-            <span className="text-xs font-medium text-ink">{selectedColor}</span>
+            <span className="text-xs font-medium text-ink">
+              {selectedColor ? translateColorName(selectedColor, locale) : ""}
+            </span>
           </div>
           <div className="mt-3 flex flex-wrap gap-2.5">
-            {product.colors.map((color) => {
+            {rawProduct.colors.map((color) => {
               const isSelected = selectedColor === color.name;
               return (
                 <button
@@ -115,7 +133,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                     className="h-3.5 w-3.5 rounded-full border border-ink/20"
                     style={{ backgroundColor: color.hex }}
                   />
-                  <span>{color.name}</span>
+                  <span>{translateColorName(color.name, locale)}</span>
                 </button>
               );
             })}
@@ -123,16 +141,16 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         </div>
       ) : null}
 
-      {product.sizes && product.sizes.length > 0 ? (
+      {rawProduct.sizes && rawProduct.sizes.length > 0 ? (
         <div className="border-t border-border pt-5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-              Select {product.sizeLabel ?? "Size"}
+              {t.selectPrefix} {product.sizeLabel ?? "Size"}
             </span>
-            <span className="text-xs text-ink-muted">True to fit</span>
+            <span className="text-xs text-ink-muted">{t.trueToFit}</span>
           </div>
           <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-6">
-            {product.sizes.map((size) => {
+            {rawProduct.sizes.map((size) => {
               const isSelected = selectedSize === size;
               return (
                 <button
@@ -146,7 +164,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                       : "border-border bg-surface text-ink hover:border-ink"
                   }`}
                 >
-                  {size}
+                  {translateSizeValue(size, locale)}
                 </button>
               );
             })}
@@ -154,13 +172,13 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         </div>
       ) : null}
 
-      {product.packs && product.packs.length > 0 ? (
+      {rawProduct.packs && rawProduct.packs.length > 0 ? (
         <div className="border-t border-border pt-5">
           <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-            Select Pack Size
+            {t.selectPackSize}
           </span>
           <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {product.packs.map((pack, idx) => {
+            {rawProduct.packs.map((pack, idx) => {
               const isSelected = selectedPackIndex === idx;
               return (
                 <button
@@ -174,8 +192,12 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
                       : "border-border bg-surface text-ink hover:border-ink"
                   }`}
                 >
-                  <span className="text-sm font-medium">{pack.label}</span>
-                  <span className="price-num text-sm font-semibold">{formatBdt(pack.price)}</span>
+                  <span className="text-sm font-medium">
+                    {translatePackLabel(pack.label, locale)}
+                  </span>
+                  <span className="price-num text-sm font-semibold">
+                    {formatPrice(pack.price, locale)}
+                  </span>
                 </button>
               );
             })}
@@ -194,7 +216,9 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             >
               <Minus className="h-4 w-4" strokeWidth={1.6} />
             </button>
-            <span className="price-num text-sm font-semibold text-ink">{quantity}</span>
+            <span className="price-num text-sm font-semibold text-ink">
+              {formatNumber(quantity, locale)}
+            </span>
             <button
               type="button"
               onClick={() => setQuantity((q) => Math.min(20, q + 1))}
@@ -214,12 +238,14 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
             {addedFeedback ? (
               <>
                 <Check className="h-4 w-4" strokeWidth={2} />
-                <span>Added to Bag</span>
+                <span>{t.addedToBag}</span>
               </>
             ) : (
               <>
                 <ShoppingBag className="h-4 w-4" strokeWidth={1.6} />
-                <span>Add to Bag — {formatBdt(unitPrice * quantity)}</span>
+                <span>
+                  {t.addToBag} — {formatPrice(unitPrice * quantity, locale)}
+                </span>
               </>
             )}
           </Button>
@@ -232,7 +258,7 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
           onClick={handleBuyNow}
           className="mt-3"
         >
-          Buy Now
+          {t.buyNow}
         </Button>
       </div>
 
@@ -240,22 +266,22 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
         <div className="flex items-start gap-2.5">
           <Truck className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.6} />
           <div>
-            <p className="font-medium text-ink">Dhaka &amp; Nationwide</p>
-            <p className="mt-0.5">Tk 80 Dhaka, Tk 150 outside. Free over Tk 3,000.</p>
+            <p className="font-medium text-ink">{t.shippingTitle}</p>
+            <p className="mt-0.5">{t.shippingDesc}</p>
           </div>
         </div>
         <div className="flex items-start gap-2.5">
           <RefreshCw className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.6} />
           <div>
-            <p className="font-medium text-ink">7-Day Exchange</p>
-            <p className="mt-0.5">Simple size swap or sealed pantry return.</p>
+            <p className="font-medium text-ink">{t.exchangeTitle}</p>
+            <p className="mt-0.5">{t.exchangeDesc}</p>
           </div>
         </div>
         <div className="flex items-start gap-2.5">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" strokeWidth={1.6} />
           <div>
-            <p className="font-medium text-ink">Verified Quality</p>
-            <p className="mt-0.5">Inspected before dispatch in Dhaka.</p>
+            <p className="font-medium text-ink">{t.qualityTitle}</p>
+            <p className="mt-0.5">{t.qualityDesc}</p>
           </div>
         </div>
       </div>

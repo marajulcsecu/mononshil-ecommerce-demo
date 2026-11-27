@@ -1,34 +1,20 @@
-import { RefreshCw, ShieldCheck, Truck, Wallet } from "lucide-react";
+"use client";
 
-const PILLARS = [
-  {
-    icon: Truck,
-    title: "24-Hour Dhaka Dispatch",
-    description: "Reliable next-day courier delivery inside Dhaka Metro and 2 to 4 days nationwide.",
-  },
-  {
-    icon: RefreshCw,
-    title: "7-Day Size Exchange",
-    description: "Easy doorstep exchanges on unworn footwear and apparel with zero complicated forms.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Single-Origin Pantry",
-    description: "Direct harvests from Sundarbans, Dinajpur, Sylhet, Pabna, and Bandarban growers.",
-  },
-  {
-    icon: Wallet,
-    title: "Flexible Checkout",
-    description: "Pay on delivery or test bKash, Nagad, and Card options in our interactive checkout.",
-  },
-];
+import { RefreshCw, ShieldCheck, Truck, Wallet } from "lucide-react";
+import { useLocale } from "@/context/LocaleContext";
+import { UI_TEXT } from "@/lib/i18n";
+
+const PILLAR_ICONS = [Truck, RefreshCw, ShieldCheck, Wallet];
 
 export function ValuePillars() {
+  const { locale } = useLocale();
+  const pillars = UI_TEXT[locale].pillars;
+
   return (
     <section className="border-y border-border bg-surface-muted">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {PILLARS.map((pillar) => {
-          const Icon = pillar.icon;
+        {pillars.map((pillar, index) => {
+          const Icon = PILLAR_ICONS[index];
           return (
             <div key={pillar.title} className="flex flex-col">
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-border bg-surface text-accent">

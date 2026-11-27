@@ -5,23 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { CATEGORIES } from "@/data/categories";
 import { PRODUCTS } from "@/data/products";
+import { getLocalizedCategory } from "@/data/translations-bn";
 import { ProductCard } from "@/components/shop/ProductCard";
+import { useLocale } from "@/context/LocaleContext";
 import { filterAndSortProducts, getCategoryProductCount } from "@/lib/catalog";
+import { UI_TEXT, formatNumber } from "@/lib/i18n";
 import type { CatalogSort, CategorySlug, PriceFilter } from "@/types/commerce";
-
-const SORT_OPTIONS: { value: CatalogSort; label: string }[] = [
-  { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "rating", label: "Top Rated" },
-];
-
-const PRICE_OPTIONS: { value: PriceFilter; label: string }[] = [
-  { value: "all", label: "All Prices" },
-  { value: "under-1000", label: "Under Tk 1,000" },
-  { value: "1000-3500", label: "Tk 1,000 - Tk 3,500" },
-  { value: "over-3500", label: "Over Tk 3,500" },
-];
 
 function parseCategory(value: string | null): CategorySlug | "all" {
   if (value === "footwear" || value === "apparel" || value === "grocery") {
@@ -52,6 +41,9 @@ function parsePrice(value: string | null): PriceFilter {
 export function ShopCatalogClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { locale } = useLocale();
+  const t = UI_TEXT[locale].shop;
+
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   const category = parseCategory(searchParams.get("category"));
@@ -76,6 +68,20 @@ export function ShopCatalogClient() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileFiltersOpen]);
+
+  const sortOptions: { value: CatalogSort; label: string }[] = [
+    { value: "featured", label: t.sortOptions.featured },
+    { value: "price-asc", label: t.sortOptions["price-asc"] },
+    { value: "price-desc", label: t.sortOptions["price-desc"] },
+    { value: "rating", label: t.sortOptions.rating },
+  ];
+
+  const priceOptions: { value: PriceFilter; label: string }[] = [
+    { value: "all", label: t.priceOptions.all },
+    { value: "under-1000", label: t.priceOptions["under-1000"] },
+    { value: "1000-3500", label: t.priceOptions["1000-3500"] },
+    { value: "over-3500", label: t.priceOptions["over-3500"] },
+  ];
 
   const updateParams = (updates: Record<string, string | null>) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -102,7 +108,10 @@ export function ShopCatalogClient() {
     [category, searchInput, sort, price, offersOnly]
   );
 
-  const activeDepartment = CATEGORIES.find((item) => item.slug === category);
+  const rawDepartment = CATEGORIES.find((item) => item.slug === category);
+  const activeDepartment = rawDepartment
+    ? getLocalizedCategory(rawDepartment, locale)
+    : undefined;
 
   const activeFilterCount =
     (category !== "all" ? 1 : 0) +
@@ -124,7 +133,7 @@ export function ShopCatalogClient() {
     <div className="space-y-8">
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-          Department
+          {t.departmentHeading}
         </h2>
         <div className="mt-3 space-y-1.5">
           <button
@@ -136,11 +145,14 @@ export function ShopCatalogClient() {
                 : "text-ink-secondary hover:bg-surface-muted hover:text-ink"
             }`}
           >
-            <span>All Departments</span>
-            <span className="price-num text-xs opacity-75">{PRODUCTS.length}</span>
+            <span>{t.allDepartments}</span>
+            <span className="price-num text-xs opacity-75">
+              {formatNumber(PRODUCTS.length, locale)}
+            </span>
           </button>
 
-          {CATEGORIES.map((item) => {
+          {CATEGORIES.map((rawItem) => {
+            const item = getLocalizedCategory(rawItem, locale);
             const selected = category === item.slug;
             return (
               <button
@@ -155,7 +167,7 @@ export function ShopCatalogClient() {
               >
                 <span>{item.name}</span>
                 <span className="price-num text-xs opacity-75">
-                  {getCategoryProductCount(item.slug)}
+                  {formatNumber(getCategoryProductCount(item.slug), locale)}
                 </span>
               </button>
             );
@@ -165,10 +177,10 @@ export function ShopCatalogClient() {
 
       <div className="border-t border-border pt-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-          Price Range (BDT)
+          {t.priceHeading}
         </h2>
         <div className="mt-3 space-y-2">
-          {PRICE_OPTIONS.map((option) => (
+          {priceOptions.map((option) => (
             <label
               key={option.value}
               className="flex items-center gap-2.5 text-sm text-ink-secondary hover:text-ink cursor-pointer"
@@ -190,9 +202,12 @@ export function ShopCatalogClient() {
 
       <div className="border-t border-border pt-6">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
-          Promotions
+          {t.promotionsHeading}
         </h2>
-        <label htmlFor="offers-filter" className="mt-3 flex items-center gap-2.5 text-sm text-ink-secondary hover:text-ink cursor-pointer">
+        <label
+          htmlFor="offers-filter"
+          className="mt-3 flex items-center gap-2.5 text-sm text-ink-secondary hover:text-ink cursor-pointer"
+        >
           <input
             id="offers-filter"
             name="offersOnly"
@@ -203,7 +218,7 @@ export function ShopCatalogClient() {
             }
             className="h-4 w-4 rounded-sm accent-accent"
           />
-          <span>Seasonal Offers Only</span>
+          <span>{t.offersOnly}</span>
         </label>
       </div>
     </div>
@@ -213,15 +228,13 @@ export function ShopCatalogClient() {
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <div className="border-b border-border pb-8">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-muted">
-          Mononshil Catalog
+          {t.eyebrow}
         </p>
         <h1 className="font-display mt-2 text-3xl font-medium tracking-tight text-ink sm:text-4xl">
-          {activeDepartment ? activeDepartment.name : "All Products"}
+          {activeDepartment ? activeDepartment.name : t.allProducts}
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-secondary">
-          {activeDepartment
-            ? activeDepartment.description
-            : "Explore our curated range of everyday footwear, breathable Bengal apparel, and single-origin pantry provisions."}
+          {activeDepartment ? activeDepartment.description : t.allDescription}
         </p>
       </div>
 
@@ -243,8 +256,8 @@ export function ShopCatalogClient() {
                 updateParams({ q: null });
               }
             }}
-            placeholder="Filter by product, material, or origin..."
-            aria-label="Search within catalog"
+            placeholder={t.searchPlaceholder}
+            aria-label={t.searchPlaceholder}
             className="h-10 w-full rounded-sm border border-border bg-surface pl-10 pr-9 text-sm text-ink placeholder:text-ink-muted focus:border-ink focus:outline-none"
           />
           {searchInput ? (
@@ -269,17 +282,17 @@ export function ShopCatalogClient() {
             className="inline-flex h-10 items-center gap-2 rounded-sm border border-border bg-surface px-3.5 text-sm font-medium text-ink hover:border-ink lg:hidden cursor-pointer"
           >
             <SlidersHorizontal className="h-4 w-4" strokeWidth={1.6} />
-            <span>Filters</span>
+            <span>{t.filtersButton}</span>
             {activeFilterCount > 0 ? (
               <span className="price-num rounded-sm bg-accent px-1.5 py-0.5 text-[11px] text-white">
-                {activeFilterCount}
+                {formatNumber(activeFilterCount, locale)}
               </span>
             ) : null}
           </button>
 
           <div className="flex items-center gap-2">
             <label htmlFor="catalog-sort" className="text-xs text-ink-muted">
-              Sort by
+              {t.sortBy}
             </label>
             <select
               id="catalog-sort"
@@ -291,7 +304,7 @@ export function ShopCatalogClient() {
               }
               className="h-10 rounded-sm border border-border bg-surface px-3 text-sm text-ink focus:border-ink focus:outline-none"
             >
-              {SORT_OPTIONS.map((option) => (
+              {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -303,14 +316,14 @@ export function ShopCatalogClient() {
 
       {activeFilterCount > 0 ? (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs text-ink-muted">Active filters:</span>
-          {category !== "all" ? (
+          <span className="text-xs text-ink-muted">{t.activeFilters}</span>
+          {activeDepartment ? (
             <button
               type="button"
               onClick={() => updateParams({ category: null })}
               className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:border-ink cursor-pointer"
             >
-              <span className="capitalize">{category}</span>
+              <span>{activeDepartment.shortTitle}</span>
               <X className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           ) : null}
@@ -320,7 +333,7 @@ export function ShopCatalogClient() {
               onClick={() => updateParams({ price: null })}
               className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:border-ink cursor-pointer"
             >
-              <span>{PRICE_OPTIONS.find((p) => p.value === price)?.label}</span>
+              <span>{priceOptions.find((p) => p.value === price)?.label}</span>
               <X className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           ) : null}
@@ -330,7 +343,7 @@ export function ShopCatalogClient() {
               onClick={() => updateParams({ offers: null })}
               className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:border-ink cursor-pointer"
             >
-              <span>Offers Only</span>
+              <span>{t.offersOnly}</span>
               <X className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           ) : null}
@@ -343,7 +356,9 @@ export function ShopCatalogClient() {
               }}
               className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2.5 py-1 text-xs font-medium text-ink hover:border-ink cursor-pointer"
             >
-              <span>Query: {searchInput.trim()}</span>
+              <span>
+                {t.queryLabel} {searchInput.trim()}
+              </span>
               <X className="h-3.5 w-3.5" strokeWidth={1.6} />
             </button>
           ) : null}
@@ -352,7 +367,7 @@ export function ShopCatalogClient() {
             onClick={clearAllFilters}
             className="ml-1 text-xs font-medium text-accent hover:underline cursor-pointer"
           >
-            Clear all
+            {t.clearAll}
           </button>
         </div>
       ) : null}
@@ -366,8 +381,11 @@ export function ShopCatalogClient() {
 
         <div className="min-w-0 flex-1">
           <p className="mb-5 text-xs text-ink-muted">
-            Showing <span className="price-num font-semibold text-ink">{filteredProducts.length}</span>{" "}
-            {filteredProducts.length === 1 ? "product" : "products"}
+            {t.showingPrefix}{" "}
+            <span className="price-num font-semibold text-ink">
+              {formatNumber(filteredProducts.length, locale)}
+            </span>{" "}
+            {filteredProducts.length === 1 ? t.productSingle : t.productPlural}
           </p>
 
           {filteredProducts.length === 0 ? (
@@ -375,19 +393,14 @@ export function ShopCatalogClient() {
               role="status"
               className="rounded-sm border border-border bg-surface px-6 py-16 text-center"
             >
-              <h2 className="font-display text-2xl font-medium text-ink">
-                No matching products found
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-ink-secondary">
-                Adjust your price range, search term, or department selection to explore the full
-                Mononshil collection.
-              </p>
+              <h2 className="font-display text-2xl font-medium text-ink">{t.emptyTitle}</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-ink-secondary">{t.emptyDesc}</p>
               <button
                 type="button"
                 onClick={clearAllFilters}
                 className="mt-6 inline-flex h-10 items-center rounded-sm bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover cursor-pointer"
               >
-                Reset All Filters
+                {t.resetAll}
               </button>
             </div>
           ) : (
@@ -405,7 +418,7 @@ export function ShopCatalogClient() {
           className="fixed inset-0 z-50 flex justify-end lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="Filter catalog"
+          aria-label={t.filtersButton}
         >
           <div
             className="fixed inset-0 bg-ink/40 backdrop-blur-[1px]"
@@ -413,7 +426,7 @@ export function ShopCatalogClient() {
           />
           <div className="relative z-10 flex h-full w-full max-w-xs flex-col bg-surface shadow-2xl">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h2 className="font-display text-xl font-medium text-ink">Filters</h2>
+              <h2 className="font-display text-xl font-medium text-ink">{t.filtersButton}</h2>
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
@@ -432,14 +445,15 @@ export function ShopCatalogClient() {
                 onClick={clearAllFilters}
                 className="h-10 flex-1 rounded-sm border border-border-strong bg-surface text-xs font-medium text-ink cursor-pointer"
               >
-                Reset
+                {t.resetShort}
               </button>
               <button
                 type="button"
                 onClick={() => setMobileFiltersOpen(false)}
                 className="h-10 flex-1 rounded-sm bg-accent text-xs font-medium text-white cursor-pointer"
               >
-                Show {filteredProducts.length} Items
+                {t.showItemsPrefix} {formatNumber(filteredProducts.length, locale)}{" "}
+                {t.showItemsSuffix}
               </button>
             </div>
           </div>
